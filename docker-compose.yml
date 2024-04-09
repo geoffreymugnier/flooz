@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+# docker-compose run --rm npm install
+  npm: &npm
+    image: node:alpine
+    container_name: flooz-npm
+    volumes:
+      - .:/var/www/app/:rw
+    working_dir: /var/www/app/
+    user: "node"
+    command: -v
+    entrypoint: ['npm']
+
+  vite:
+    <<: *npm
+    container_name: flooz-vite
+    command: "dev -- --host --port ${VITE_PORT:-5173}"
+    entrypoint: ['npm', 'run']
+    labels:
+      # Simple HTTP traefik support
+      - "traefik.http.routers.flooz-vite.rule=Host(`flooz.docker`)"
+      - "traefik.http.services.flooz-vite-service.loadbalancer.server.port=${VITE_PORT:-5173}"
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "diun.enable=true"
+
+networks:
+  default:
+      name: vinatis
+      external: true
